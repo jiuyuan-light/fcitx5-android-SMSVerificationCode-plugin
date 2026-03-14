@@ -21,8 +21,6 @@ import android.provider.Telephony
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -34,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.fcitx.fcitx5.android.plugin.sms.databinding.ActivityPluginBinding
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
@@ -56,6 +55,7 @@ private val DEFAULT_KEYWORDS = listOf(
     "一次性",
     "口令"
 )
+private val LENGTH_PREFERENCE = intArrayOf(6, 4, 5, 7, 8)
 
 private object OtpDeduper {
     private var lastCode: String? = null
@@ -81,7 +81,6 @@ internal fun parseKeywords(raw: String): List<String> {
 }
 
 private object KeywordStore {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val initialized = AtomicBoolean(false)
     @Volatile private var cachedRaw: String = ""
     @Volatile private var cached: List<String> = DEFAULT_KEYWORDS
@@ -94,8 +93,8 @@ private object KeywordStore {
 
     fun ensureLoaded(context: Context) {
         if (!initialized.compareAndSet(false, true)) return
-        scope.launch {
-            val raw = context.dataStore.data.first()[KEYWORDS_KEY].orEmpty()
+        MainService.scope.launch {
+            val raw = context.applicationContext.dataStore.data.first()[KEYWORDS_KEY].orEmpty()
             update(raw)
         }
     }
@@ -113,8 +112,8 @@ private object KeywordStore {
     fun save(context: Context, raw: String) {
         val trimmed = raw.trim()
         update(trimmed)
-        scope.launch {
-            context.dataStore.edit { prefs -> prefs[KEYWORDS_KEY] = trimmed }
+        MainService.scope.launch {
+            context.applicationContext.dataStore.edit { prefs -> prefs[KEYWORDS_KEY] = trimmed }
         }
     }
 }
@@ -141,7 +140,28 @@ internal fun pickOtp(text: String, keywords: List<String>): String? {
         }
     }
 
-    return matches.firstOrNull { (_, code) -> code.length == 6 }?.second ?: matches[0].second
+    for (len in LENGTH_PREFERENCE) {
+        val picked = matches.firstOrNull { (_, code) -> code.length == len }?.second
+        if (picked != null) return picked
+    }
+    return matches[0].second
+}
+
+private fun extractSmsBodies(intent: Intent): List<String> {
+    return Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        ?.mapNotNull { it.messageBody }
+        ?: emptyList()
+}
+
+private fun extractNotificationText(sbn: StatusBarNotification?): String? {
+    val extras = sbn?.notification?.extras ?: return null
+    val parts = ArrayList<CharSequence>(5)
+    extras.getCharSequence(Notification.EXTRA_TITLE)?.let { parts.add(it) }
+    extras.getCharSequence(Notification.EXTRA_TEXT)?.let { parts.add(it) }
+    extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.let { parts.add(it) }
+    extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.let { parts.addAll(it) }
+    val content = parts.joinToString(" ") { it.toString() }.trim()
+    return content.ifEmpty { null }
 }
 
 fun Context.processAndCopyCode(text: String) {
@@ -156,6 +176,10 @@ fun Context.processAndCopyCode(text: String) {
 }
 
 class MainService : Service() {
+    companion object {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    }
+
     override fun onBind(intent: Intent): IBinder = Messenger(Handler(Looper.getMainLooper())).binder
 }
 
@@ -165,8 +189,7 @@ class SMSReceiver : BroadcastReceiver() {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION == action ||
             Telephony.Sms.Intents.SMS_DELIVER_ACTION == action
         ) {
-            Telephony.Sms.Intents.getMessagesFromIntent(intent)
-                ?.forEach { context.processAndCopyCode(it.messageBody) }
+            extractSmsBodies(intent).forEach { context.processAndCopyCode(it) }
         }
     }
 }
@@ -174,14 +197,8 @@ class SMSReceiver : BroadcastReceiver() {
 class OtpNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         try {
-            val extras = sbn?.notification?.extras ?: return
-            val parts = ArrayList<CharSequence>(5)
-            extras.getCharSequence(Notification.EXTRA_TITLE)?.let { parts.add(it) }
-            extras.getCharSequence(Notification.EXTRA_TEXT)?.let { parts.add(it) }
-            extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.let { parts.add(it) }
-            extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.let { parts.addAll(it) }
-            val content = parts.joinToString(" ") { it.toString() }.trim()
-            if (content.isNotEmpty()) processAndCopyCode(content)
+            val content = extractNotificationText(sbn) ?: return
+            processAndCopyCode(content)
         } catch (t: Throwable) {
             Log.e("Fcitx5Sms", "Notification parse failed", t)
         }
@@ -191,21 +208,20 @@ class OtpNotificationListener : NotificationListenerService() {
 class PluginActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_plugin)
+        val binding = ActivityPluginBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         KeywordStore.ensureLoaded(this)
 
-        val keywordInput = findViewById<EditText>(R.id.keyword_input)
-        keywordInput.setText(KeywordStore.keywordsText(this))
-
-        findViewById<Button>(R.id.save_keywords_button).setOnClickListener {
-            KeywordStore.save(this, keywordInput.text?.toString().orEmpty())
+        binding.keywordInput.setText(KeywordStore.keywordsText(this))
+        binding.saveKeywordsButton.setOnClickListener {
+            KeywordStore.save(this, binding.keywordInput.text?.toString().orEmpty())
             Toast.makeText(this, getString(R.string.keywords_saved), Toast.LENGTH_SHORT).show()
         }
-        findViewById<Button>(R.id.sms_permission_button).setOnClickListener {
+        binding.smsPermissionButton.setOnClickListener {
             requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), REQUEST_SMS_PERMISSION)
         }
-        findViewById<Button>(R.id.notification_permission_button).setOnClickListener {
+        binding.notificationPermissionButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
     }

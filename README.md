@@ -17,6 +17,8 @@
 5. 在 Fcitx5 输入法设置中，确保已启用剪贴板功能。
 6. 当收到验证码短信或通知时，验证码会自动出现在 Fcitx5 的剪贴板历史或候选词中（取决于主程序实现）。
 
+提示：如需从通知提取验证码，请在系统设置中开启通知监听权限。关键字可在插件界面配置并保存。
+
 ## 构建指南
 本项目使用 Gradle 构建。构建前请先设置 `JAVA_HOME` 与 `ANDROID_HOME`，或在 `local.properties` 中配置 `org.gradle.java.home` 与 `sdk.dir`（可参考 `local.properties.templete`）。
 

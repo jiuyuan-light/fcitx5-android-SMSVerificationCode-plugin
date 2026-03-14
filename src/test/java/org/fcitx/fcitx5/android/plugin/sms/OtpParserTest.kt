@@ -19,7 +19,7 @@ class OtpParserTest {
     }
 
     @Test
-    fun pickOtp_fallsBackToSixDigits() {
+    fun pickOtp_fallsBackToPreferredLength() {
         val text = "代码 1111 与 333333"
         val code = pickOtp(text, emptyList())
         assertEquals("333333", code)

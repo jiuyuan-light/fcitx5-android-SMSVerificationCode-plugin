@@ -9,6 +9,10 @@ android {
     namespace = "org.fcitx.fcitx5.android.plugin.sms"
     compileSdk = 35
 
+    buildFeatures {
+        viewBinding = true
+    }
+
     defaultConfig {
         applicationId = "org.fcitx.fcitx5.android.plugin.sms"
         minSdk = 24
