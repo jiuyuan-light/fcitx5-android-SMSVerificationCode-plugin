@@ -11,7 +11,6 @@
   - 广播监听：通过 `SMS_RECEIVED` 广播捕获短信内容。
   - 通知监听：通过通知栏监听服务（Notification Listener）作为兜底方案，提取通知内容中的验证码。
 - **无感体验**：提取成功后自动写入剪贴板，Fcitx5 输入法剪贴板面板可直接调用。
-- **极简实现**：核心逻辑收敛在单文件实现，减少冗余代码与构建复杂度。
 
 ## 🚀 使用方法
 
@@ -43,16 +42,6 @@ cd fcitx5-android-SMSVerificationCode-plugin
 # 编译 Release 包
 ./gradlew assembleRelease -x lint
 ```
-
-## 🧩 架构说明
-
-在不依赖主应用内部实现细节的前提下，通过标准 Android 接口实现数据提取：
-
-1. **SMSReceiver**：监听标准短信广播。
-2. **OtpNotificationListener**：监听通知栏消息（可选兜底）。
-3. **MainService**：供 Fcitx5-Android 绑定的插件服务入口。
-
-数据流向：`监听源` -> `提取验证码` -> `写入系统剪贴板` -> `Fcitx5 读取`
 
 ## 🤝 贡献与致谢
 
