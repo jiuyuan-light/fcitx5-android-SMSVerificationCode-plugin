@@ -94,14 +94,14 @@ class PluginActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(64, 64, 64, 64) }
-        root.addView(TextView(this).apply { text = "短信验证码插件"; textSize = 24f; setPadding(0, 0, 0, 32) })
+        root.addView(TextView(this).apply { text = getString(R.string.app_name); textSize = 24f; setPadding(0, 0, 0, 32) })
         root.addView(TextView(this).apply { text = "自动提取短信验证码并复制到剪贴板"; textSize = 16f; setPadding(0, 0, 0, 64) })
-        root.addView(Button(this).apply { text = "授予短信权限"; setOnClickListener { requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), 100) } })
-        root.addView(Button(this).apply { text = "授予通知监听权限"; setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } })
+        root.addView(Button(this).apply { text = getString(R.string.grant_sms_permission); setOnClickListener { requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), 100) } })
+        root.addView(Button(this).apply { text = getString(R.string.grant_notification_permission); setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } })
         setContentView(root)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == 100) Toast.makeText(this, if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) "权限已授予" else "权限被拒绝", Toast.LENGTH_SHORT).show()
+        if (requestCode == 100) Toast.makeText(this, if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) getString(R.string.permission_granted) else getString(R.string.permission_denied), Toast.LENGTH_SHORT).show()
     }
 }

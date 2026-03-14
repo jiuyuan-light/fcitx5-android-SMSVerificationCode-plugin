@@ -74,6 +74,7 @@ val verifyFcitxPluginMetadata = tasks.register("verifyFcitxPluginMetadata") {
         requireOk(stringsXmlFile.exists(), "strings.xml must exist")
         val stringsXml = stringsXmlFile.readText()
         requireOk(stringsXml.contains("name=\"app_name\""), "strings.xml must define app_name")
+        requireOk(stringsXml.contains("小企鹅输入法（短信验证码插件）"), "strings.xml app_name must be 小企鹅输入法（短信验证码插件）")
 
         val manifest = file("src/main/AndroidManifest.xml").readText()
         requireOk(manifest.contains("android:label=\"@string/app_name\""), "AndroidManifest.xml must use @string/app_name label")

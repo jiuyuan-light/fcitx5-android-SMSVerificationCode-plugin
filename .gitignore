@@ -34,3 +34,5 @@ build/
 
 # Local configuration
 local.properties
+
+release_apks/

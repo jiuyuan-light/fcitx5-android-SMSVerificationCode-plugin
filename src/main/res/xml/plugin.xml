@@ -2,6 +2,6 @@
 <plugin>
     <apiVersion>0.1</apiVersion>
     <domain>fcitx5-sms</domain>
-    <description>短信验证码插件</description>
+    <description>小企鹅输入法（短信验证码插件）</description>
     <hasService>true</hasService>
 </plugin>
