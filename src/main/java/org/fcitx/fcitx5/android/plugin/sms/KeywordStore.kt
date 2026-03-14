@@ -20,13 +20,18 @@ internal object KeywordStore {
     private val lock = Any()
 
     private fun defaultKeywords(context: Context): List<String> {
-        return parseKeywords(context.getString(R.string.default_keywords))
+        return try {
+            parseKeywords(context.getString(R.string.default_keywords))
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     private fun update(context: Context, raw: String) {
         val parsed = parseKeywords(raw)
         cachedRaw = raw
-        cached = if (parsed.isEmpty()) defaultKeywords(context) else parsed
+        val fallback = defaultKeywords(context)
+        cached = if (parsed.isEmpty()) fallback else parsed
     }
 
     fun keywords(context: Context): List<String> {
@@ -41,7 +46,8 @@ internal object KeywordStore {
 
     fun keywordsText(context: Context): String {
         val raw = prefs(context.applicationContext).getString(PREF_KEYWORDS, "")?.trim().orEmpty()
-        return if (raw.isNotBlank()) raw else defaultKeywords(context.applicationContext).joinToString(", ")
+        val fallback = defaultKeywords(context.applicationContext)
+        return if (raw.isNotBlank()) raw else fallback.joinToString(", ")
     }
 
     fun save(context: Context, raw: String) {
