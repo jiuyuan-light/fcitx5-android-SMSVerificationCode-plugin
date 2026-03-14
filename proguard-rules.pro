@@ -1,0 +1,2 @@
+-dontwarn kotlin.**
+-keep class org.fcitx.fcitx5.android.plugin.sms.** { *; }

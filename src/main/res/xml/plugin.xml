@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin>
+    <apiVersion>0.1</apiVersion>
+    <domain>fcitx5-sms</domain>
+    <description>小企鹅输入法（短信验证码插件）：自动提取验证码并推送到剪贴板（需要短信权限；推荐开启通知监听权限）</description>
+    <hasService>true</hasService>
+</plugin>

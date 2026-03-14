@@ -1,0 +1,81 @@
+name: Auto Build Release
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check upstream
+        id: upstream
+        run: |
+          chmod +x check_upstream.sh
+          OUT="$(./check_upstream.sh)"
+          echo "$OUT"
+          LATEST_TAG="$(echo "$OUT" | awk -F= '/^latest_tag=/{print $2}')"
+          UPDATE_NEEDED="$(echo "$OUT" | awk -F= '/^update_needed=/{print $2}')"
+          echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "update_needed=$UPDATE_NEEDED" >> "$GITHUB_OUTPUT"
+
+      - name: Stop if up to date
+        if: steps.upstream.outputs.update_needed != 'true' && github.event_name != 'workflow_dispatch'
+        run: echo "Up to date."
+
+      - name: Set up JDK
+        if: steps.upstream.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        if: steps.upstream.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platforms
+        if: steps.upstream.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        if: steps.upstream.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore signing key
+        if: steps.upstream.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          SIGNING_STORE_BASE64: ${{ secrets.SIGNING_STORE_BASE64 }}
+        run: |
+          if [ -n "$SIGNING_STORE_BASE64" ]; then
+            echo "$SIGNING_STORE_BASE64" | base64 --decode > signing.p12
+          else
+            echo "No SIGNING_STORE_BASE64 secret found."
+          fi
+
+      - name: Build Release APK
+        if: steps.upstream.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          PLUGIN_VERSION: ${{ steps.upstream.outputs.latest_tag }}
+          SIGNING_STORE_FILE: signing.p12
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: fcitx5-android-sms-plugin
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease -x lint
+
+      - name: Publish Release
+        if: steps.upstream.outputs.update_needed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.upstream.outputs.latest_tag }}
+          name: 小企鹅输入法（短信验证码插件） ${{ steps.upstream.outputs.latest_tag }}
+          files: build/outputs/apk/release/*.apk
