@@ -2,7 +2,6 @@ package org.fcitx.fcitx5.android.plugin.sms
 
 import android.Manifest
 import android.app.Activity
-import android.app.Notification
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.ClipData
@@ -15,7 +14,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Messenger
-import android.os.SystemClock
 import android.provider.Settings
 import android.provider.Telephony
 import android.service.notification.NotificationListenerService
@@ -23,7 +21,6 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import android.widget.Toast
 import org.fcitx.fcitx5.android.plugin.sms.databinding.ActivityPluginBinding
-import java.util.regex.Pattern
 
 private const val REQUEST_SMS_PERMISSION = 100
 private const val CLIP_LABEL = "OTP"
