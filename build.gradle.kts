@@ -44,7 +44,6 @@ android {
 
     buildFeatures {
         resValues = true
-        buildConfig = true
     }
 
     compileOptions {
@@ -61,8 +60,7 @@ android {
             val localProps = loadLocalProperties()
             val storeFilePath = System.getenv("SIGNING_STORE_FILE")
                 ?: localProps.getProperty("signing.storeFile")
-                ?: "D:/code/worker/tmp/Fcitx5-Android-SMS-Plugin.p12"
-            storeFile = file(storeFilePath)
+            storeFile = storeFilePath?.let { file(it) }
             storeType = "PKCS12"
 
             val sp = System.getenv("SIGNING_STORE_PASSWORD")
@@ -84,11 +82,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            buildConfigField("boolean", "ENABLE_NOTIFICATION_LISTENER", "true")
             signingConfig = signingConfigs.getByName("release")
-        }
-        debug {
-            buildConfigField("boolean", "ENABLE_NOTIFICATION_LISTENER", "true")
         }
     }
 }
