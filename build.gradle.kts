@@ -17,13 +17,23 @@ android {
         applicationId = "org.fcitx.fcitx5.android.plugin.sms"
         minSdk = 24
         targetSdk = 35
+        val versionFile = rootProject.file("version.properties")
+        val versionProps = Properties().apply {
+            if (versionFile.exists()) {
+                versionFile.inputStream().use { load(it) }
+            }
+        }
         val envVersionName = System.getenv("PLUGIN_VERSION")
         val envVersionCode = System.getenv("PLUGIN_VERSION_CODE")
+        val fileVersionName = versionProps.getProperty("versionName")
+        val fileVersionCode = versionProps.getProperty("versionCode")
         val fallbackVersionName = "0.1.2"
         val fallbackVersionCode = 1012007
 
-        versionName = envVersionName ?: fallbackVersionName
-        versionCode = envVersionCode?.toIntOrNull() ?: fallbackVersionCode
+        versionName = envVersionName ?: fileVersionName ?: fallbackVersionName
+        versionCode = envVersionCode?.toIntOrNull()
+            ?: fileVersionCode?.toIntOrNull()
+            ?: fallbackVersionCode
         setProperty("archivesBaseName", "fcitx5-sms-plugin-$versionName")
 
         val keywordFile = rootProject.file("default_keywords.txt")
