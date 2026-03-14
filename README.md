@@ -3,13 +3,12 @@
 [![License](https://img.shields.io/github/license/jiuyuan-light/fcitx5-android-SMSVerificationCode-plugin)](LICENSE)
 [![Build Status](https://github.com/jiuyuan-light/fcitx5-android-SMSVerificationCode-plugin/workflows/Auto%20Release/badge.svg)](https://github.com/jiuyuan-light/fcitx5-android-SMSVerificationCode-plugin/actions)
 
-一个为 [Fcitx5 Android](https://github.com/fcitx5-android/fcitx5-android) 设计的插件：接收到短信或通知时自动提取验证码，并复制到系统剪贴板。
+一个为 [Fcitx5 Android](https://github.com/fcitx5-android/fcitx5-android) 设计的插件：接收到短信时自动提取验证码，并复制到系统剪贴板。
 
 ## ✨ 功能特性
 
-- **多渠道监听**：
-  - 广播监听：通过 `SMS_RECEIVED` 广播捕获短信内容。
-  - 通知监听：通过通知栏监听服务（Notification Listener）作为兜底方案，提取通知内容中的验证码。
+- **短信监听**：
+  - 通过 `SMS_RECEIVED` 广播捕获短信内容。
 - **无感体验**：提取成功后自动写入剪贴板，Fcitx5 输入法剪贴板面板可直接调用。
 
 ## 🚀 使用方法
@@ -18,7 +17,6 @@
 2. 下载并安装本插件 APK。
 3. 在 **Fcitx5 输入法设置 → 插件** 中打开本插件页面，授予以下权限：
    - **短信权限**：用于接收短信验证码。
-   - **通知权限**（可选）：用于从通知栏提取验证码（推荐开启以获得更好兼容性）。
 4. 在 Fcitx5 输入法设置中，确保已启用剪贴板功能。
 5. 当收到验证码短信时，验证码将自动出现在 Fcitx5 的剪贴板历史或候选词中（取决于主程序实现）。
 

@@ -2,7 +2,6 @@ package org.fcitx.fcitx5.android.plugin.sms
 
 import android.Manifest
 import android.app.Activity
-import android.app.Notification
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.ClipData
@@ -15,10 +14,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Messenger
-import android.provider.Settings
 import android.provider.Telephony
-import android.service.notification.NotificationListenerService
-import android.service.notification.StatusBarNotification
 import android.util.Log
 import android.widget.Button
 import android.widget.LinearLayout
@@ -73,23 +69,6 @@ class SMSReceiver : BroadcastReceiver() {
     }
 }
 
-class OtpNotificationListener : NotificationListenerService() {
-    override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        try {
-            val extras = sbn?.notification?.extras ?: return
-            val parts = ArrayList<CharSequence>(5)
-            extras.getCharSequence(Notification.EXTRA_TITLE)?.let { parts.add(it) }
-            extras.getCharSequence(Notification.EXTRA_TEXT)?.let { parts.add(it) }
-            extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.let { parts.add(it) }
-            extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.let { parts.addAll(it) }
-            val content = parts.joinToString(" ") { it.toString() }.trim()
-            if (content.isNotEmpty()) processAndCopyCode(content)
-        } catch (t: Throwable) {
-            Log.e("Fcitx5Sms", "Notification parse failed", t)
-        }
-    }
-}
-
 class PluginActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,7 +76,6 @@ class PluginActivity : Activity() {
         root.addView(TextView(this).apply { text = getString(R.string.app_name); textSize = 24f; setPadding(0, 0, 0, 32) })
         root.addView(TextView(this).apply { text = "自动提取短信验证码并复制到剪贴板"; textSize = 16f; setPadding(0, 0, 0, 64) })
         root.addView(Button(this).apply { text = getString(R.string.grant_sms_permission); setOnClickListener { requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), 100) } })
-        root.addView(Button(this).apply { text = getString(R.string.grant_notification_permission); setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } })
         setContentView(root)
     }
 
