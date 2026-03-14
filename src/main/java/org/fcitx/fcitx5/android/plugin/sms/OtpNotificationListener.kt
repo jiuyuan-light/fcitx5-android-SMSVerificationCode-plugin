@@ -25,7 +25,7 @@ class OtpNotificationListener : NotificationListenerService() {
     
             val code = VerificationCodeExtractor.extract(content)
             if (code != null) {
-                ClipboardUtil.copy(this, code)
+                copyToClipboard(code)
             }
         } catch (t: Throwable) {
             Log.e("Fcitx5SmsPlugin", "Error in onNotificationPosted", t)

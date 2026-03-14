@@ -17,7 +17,7 @@ class SMSReceiver : BroadcastReceiver() {
                     val body = sms.messageBody
                     val code = VerificationCodeExtractor.extract(body)
                     if (code != null) {
-                        ClipboardUtil.copy(context, code)
+                        context.copyToClipboard(code)
                     }
                 }
             }

@@ -84,12 +84,10 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            resValue("string", "app_name", "@string/app_name_release")
             buildConfigField("boolean", "ENABLE_NOTIFICATION_LISTENER", "true")
             signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            resValue("string", "app_name", "@string/app_name_debug")
             buildConfigField("boolean", "ENABLE_NOTIFICATION_LISTENER", "true")
         }
     }
