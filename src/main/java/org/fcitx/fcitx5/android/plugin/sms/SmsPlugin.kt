@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Messenger
+import android.os.SystemClock
 import android.provider.Telephony
 import android.util.Log
 import android.widget.Button
@@ -23,6 +24,22 @@ import android.widget.Toast
 import java.util.regex.Pattern
 
 private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
+
+private object OtpDeduper {
+    private var lastCode: String? = null
+    private var lastAt: Long = 0
+    private const val WINDOW_MS = 60_000L
+
+    @Synchronized
+    fun shouldCopy(code: String): Boolean {
+        val now = SystemClock.elapsedRealtime()
+        val same = (code == lastCode) && (now - lastAt) < WINDOW_MS
+        if (same) return false
+        lastCode = code
+        lastAt = now
+        return true
+    }
+}
 private val KEYWORDS = arrayOf("验证码", "校验码", "动态码", "确认码", "取件码", "提货码", "一次性", "口令", "otp", "passcode", "one-time", "verification", "code")
 
 private fun pickOtp(text: String): String? {
@@ -36,21 +53,14 @@ private fun pickOtp(text: String): String? {
     if (matches.isEmpty()) return null
     if (matches.size == 1) return matches[0].second
 
-    val lower = text.lowercase()
-    val keywordPos = KEYWORDS.map { lower.indexOf(it) }.filter { it >= 0 }
-    if (keywordPos.isNotEmpty()) {
-        val minKeywordPos = keywordPos.minOrNull() ?: -1
-        return matches.minByOrNull { (pos, _) -> kotlin.math.abs(pos - minKeywordPos) }?.second
-    }
-
     return matches.firstOrNull { (_, code) -> code.length == 6 }?.second ?: matches[0].second
 }
 
 fun Context.processAndCopyCode(text: String) {
     val code = pickOtp(text) ?: return
+    if (!OtpDeduper.shouldCopy(code)) return
     try {
         (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("OTP", code))
-        Log.i("Fcitx5Sms", "Copied: $code")
     } catch (e: Exception) {
         Log.e("Fcitx5Sms", "Copy failed", e)
     }
@@ -73,8 +83,7 @@ class PluginActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(64, 64, 64, 64) }
-        root.addView(TextView(this).apply { text = getString(R.string.app_name); textSize = 24f; setPadding(0, 0, 0, 32) })
-        root.addView(TextView(this).apply { text = "自动提取短信验证码并复制到剪贴板"; textSize = 16f; setPadding(0, 0, 0, 64) })
+        root.addView(TextView(this).apply { text = getString(R.string.app_name); textSize = 20f; setPadding(0, 0, 0, 48) })
         root.addView(Button(this).apply { text = getString(R.string.grant_sms_permission); setOnClickListener { requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), 100) } })
         setContentView(root)
     }

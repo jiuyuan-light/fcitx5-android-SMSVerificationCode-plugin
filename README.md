@@ -42,6 +42,8 @@ cd fcitx5-android-SMSVerificationCode-plugin
 ./gradlew assembleRelease -x lint
 ```
 
+说明：`src/main/assets/descriptor.json` 为占位文件，`sha256` 与 `files` 会在发布或打包时更新。`src/main/res/xml/plugin.xml` 仅包含插件元信息。
+
 ## 🤝 贡献与致谢
 
 本项目灵感来源于以下开源项目：

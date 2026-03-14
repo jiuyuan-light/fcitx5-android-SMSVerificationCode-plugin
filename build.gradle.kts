@@ -8,7 +8,6 @@ plugins {
 android {
     namespace = "org.fcitx.fcitx5.android.plugin.sms"
     compileSdk = 35
-    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "org.fcitx.fcitx5.android.plugin.sms"
