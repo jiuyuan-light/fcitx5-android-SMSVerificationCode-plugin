@@ -115,6 +115,15 @@ private object KeywordStore {
             app.dataStore.edit { prefs -> prefs[KEYWORDS_KEY] = trimmed }
         }
     }
+
+    fun reset(context: Context) {
+        val app = context.applicationContext
+        cachedRaw = ""
+        cached = defaultKeywords(app)
+        MainService.scope.launch {
+            app.dataStore.edit { prefs -> prefs.remove(KEYWORDS_KEY) }
+        }
+    }
 }
 
 internal fun pickOtp(text: String, keywords: List<String>): String? {
@@ -215,6 +224,11 @@ class PluginActivity : Activity() {
         binding.keywordInput.setText(KeywordStore.keywordsText(this))
         binding.saveKeywordsButton.setOnClickListener {
             KeywordStore.save(this, binding.keywordInput.text?.toString().orEmpty())
+            Toast.makeText(this, getString(R.string.keywords_saved), Toast.LENGTH_SHORT).show()
+        }
+        binding.resetKeywordsButton.setOnClickListener {
+            KeywordStore.reset(this)
+            binding.keywordInput.setText(KeywordStore.keywordsText(this))
             Toast.makeText(this, getString(R.string.keywords_saved), Toast.LENGTH_SHORT).show()
         }
         binding.smsPermissionButton.setOnClickListener {

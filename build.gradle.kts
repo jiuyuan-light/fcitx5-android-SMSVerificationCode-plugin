@@ -26,6 +26,8 @@ android {
             keywordFile.readLines(Charsets.UTF_8)
                 .map { it.trim() }
                 .filter { it.isNotEmpty() && !it.startsWith("#") }
+                .distinct()
+                .sorted()
         } else {
             listOf("验证码", "校验码", "动态码", "确认码", "取件码", "提货码", "一次性", "口令")
         }
