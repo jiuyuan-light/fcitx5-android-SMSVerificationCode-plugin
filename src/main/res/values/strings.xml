@@ -2,11 +2,11 @@
 <resources>
     <string name="app_name">小企鹅输入法（短信验证码插件）</string>
     <string name="grant_sms_permission">授予短信权限</string>
-    <string name="grant_notification_permission">Grant notification access</string>
-    <string name="keyword_label">OTP keywords (comma-separated)</string>
-    <string name="keyword_hint">e.g. otp, verification, code</string>
-    <string name="save_keywords">Save keywords</string>
-    <string name="keywords_saved">Keywords saved</string>
+    <string name="grant_notification_permission">授予通知监听权限</string>
+    <string name="keyword_label">验证码关键字（逗号分隔）</string>
+    <string name="keyword_hint">例如：验证码, 动态码, OTP</string>
+    <string name="save_keywords">保存关键字</string>
+    <string name="keywords_saved">关键字已保存</string>
     <string name="permission_granted">权限已授予</string>
     <string name="permission_denied">权限被拒绝</string>
 </resources>

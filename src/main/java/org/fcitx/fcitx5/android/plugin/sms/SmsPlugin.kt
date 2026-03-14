@@ -34,13 +34,19 @@ private const val PREF_KEYWORDS = "keywords"
 private const val REQUEST_SMS_PERMISSION = 100
 private const val CLIP_LABEL = "OTP"
 private val DEFAULT_KEYWORDS = listOf(
+    "验证码",
+    "校验码",
+    "动态码",
+    "确认码",
+    "取件码",
+    "提货码",
+    "一次性",
+    "口令",
     "otp",
     "passcode",
     "one-time",
     "verification",
-    "code",
-    "sms code",
-    "auth code"
+    "code"
 )
 
 private object OtpDeduper {
@@ -59,9 +65,10 @@ private object OtpDeduper {
     }
 }
 
+private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
 private fun loadKeywords(context: Context): List<String> {
-    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    val raw = prefs.getString(PREF_KEYWORDS, null)?.trim().orEmpty()
+    val raw = prefs(context).getString(PREF_KEYWORDS, null)?.trim().orEmpty()
     if (raw.isEmpty()) return DEFAULT_KEYWORDS
     val parsed = raw.split(Regex("[,;\\n]+"))
         .map { it.trim() }
@@ -70,14 +77,12 @@ private fun loadKeywords(context: Context): List<String> {
 }
 
 private fun loadKeywordsText(context: Context): String {
-    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    val raw = prefs.getString(PREF_KEYWORDS, null)?.trim().orEmpty()
+    val raw = prefs(context).getString(PREF_KEYWORDS, null)?.trim().orEmpty()
     return if (raw.isEmpty()) DEFAULT_KEYWORDS.joinToString(", ") else raw
 }
 
 private fun saveKeywords(context: Context, raw: String) {
-    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    prefs.edit().putString(PREF_KEYWORDS, raw.trim()).apply()
+    prefs(context).edit().putString(PREF_KEYWORDS, raw.trim()).apply()
 }
 
 private fun pickOtp(text: String, keywords: List<String>): String? {
