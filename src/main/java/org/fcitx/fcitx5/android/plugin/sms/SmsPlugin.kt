@@ -25,11 +25,8 @@ import android.widget.Toast
 import org.fcitx.fcitx5.android.plugin.sms.databinding.ActivityPluginBinding
 import java.util.regex.Pattern
 
-private const val PREFS_NAME = "otp"
-private const val PREF_KEYWORDS = "keywords"
 private const val REQUEST_SMS_PERMISSION = 100
 private const val CLIP_LABEL = "OTP"
-private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
 private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
 private val LENGTH_PREFERENCE = intArrayOf(6, 4, 5, 7, 8)
@@ -47,55 +44,6 @@ private object OtpDeduper {
         lastCode = code
         lastAt = now
         return true
-    }
-}
-
-internal fun parseKeywords(raw: String): List<String> {
-    return raw.split(Regex("[,;\\n]+"))
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .distinct()
-}
-
-private object KeywordStore {
-    @Volatile private var cachedRaw: String = ""
-    @Volatile private var cached: List<String> = emptyList()
-
-    private fun defaultKeywords(context: Context): List<String> {
-        return parseKeywords(context.getString(R.string.default_keywords))
-    }
-
-    private fun update(context: Context, raw: String) {
-        val parsed = parseKeywords(raw)
-        cachedRaw = raw
-        cached = if (parsed.isEmpty()) defaultKeywords(context) else parsed
-    }
-
-    fun keywords(context: Context): List<String> {
-        val raw = prefs(context.applicationContext).getString(PREF_KEYWORDS, "")?.trim().orEmpty()
-        if (cached.isEmpty() || raw != cachedRaw) {
-            update(context.applicationContext, raw)
-        }
-        return cached
-    }
-
-    fun keywordsText(context: Context): String {
-        val raw = prefs(context.applicationContext).getString(PREF_KEYWORDS, "")?.trim().orEmpty()
-        return if (raw.isNotBlank()) raw else defaultKeywords(context.applicationContext).joinToString(", ")
-    }
-
-    fun save(context: Context, raw: String) {
-        val trimmed = raw.trim()
-        val app = context.applicationContext
-        update(app, trimmed)
-        prefs(app).edit().putString(PREF_KEYWORDS, trimmed).apply()
-    }
-
-    fun reset(context: Context) {
-        val app = context.applicationContext
-        cachedRaw = ""
-        cached = defaultKeywords(app)
-        prefs(app).edit().remove(PREF_KEYWORDS).apply()
     }
 }
 
