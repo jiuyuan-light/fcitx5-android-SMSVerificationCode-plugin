@@ -14,7 +14,7 @@ android {
         applicationId = "org.fcitx.fcitx5.android.plugin.sms"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1012006
+        versionCode = 1012007
         versionName = System.getenv("PLUGIN_VERSION") ?: "0.1.2"
         setProperty("archivesBaseName", "fcitx5-sms-plugin-$versionName")
     }
@@ -64,7 +64,7 @@ val verifyFcitxPluginMetadata = tasks.register("verifyFcitxPluginMetadata") {
         }
 
         val pluginXml = file("src/main/res/xml/plugin.xml").readText()
-        requireOk(pluginXml.contains("<domain>fcitx5-sms</domain>"), "plugin.xml must keep domain=fcitx5-sms")
+        requireOk(pluginXml.contains("<domain>sms</domain>"), "plugin.xml must keep domain=sms")
 
         val descriptorJson = file("src/main/assets/descriptor.json").readText()
         requireOk(Regex("\"sha256\"\\s*:\\s*\"0{64}\"").containsMatchIn(descriptorJson), "descriptor.json sha256 must be 64 zeros")
