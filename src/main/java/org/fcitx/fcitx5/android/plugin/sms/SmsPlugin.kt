@@ -41,12 +41,7 @@ private val DEFAULT_KEYWORDS = listOf(
     "取件码",
     "提货码",
     "一次性",
-    "口令",
-    "otp",
-    "passcode",
-    "one-time",
-    "verification",
-    "code"
+    "口令"
 )
 
 private object OtpDeduper {
