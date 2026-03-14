@@ -22,27 +22,14 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import android.widget.Toast
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.plugin.sms.databinding.ActivityPluginBinding
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
 private const val PREFS_NAME = "otp"
 private const val PREF_KEYWORDS = "keywords"
 private const val REQUEST_SMS_PERMISSION = 100
 private const val CLIP_LABEL = "OTP"
-
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = PREFS_NAME)
-private val KEYWORDS_KEY = stringPreferencesKey(PREF_KEYWORDS)
+private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
 private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
 private val LENGTH_PREFERENCE = intArrayOf(6, 4, 5, 7, 8)
@@ -71,7 +58,6 @@ internal fun parseKeywords(raw: String): List<String> {
 }
 
 private object KeywordStore {
-    private val initialized = AtomicBoolean(false)
     @Volatile private var cachedRaw: String = ""
     @Volatile private var cached: List<String> = emptyList()
 
@@ -85,44 +71,31 @@ private object KeywordStore {
         cached = if (parsed.isEmpty()) defaultKeywords(context) else parsed
     }
 
-    fun ensureLoaded(context: Context) {
-        if (!initialized.compareAndSet(false, true)) return
-        MainService.scope.launch {
-            val app = context.applicationContext
-            val raw = app.dataStore.data.first()[KEYWORDS_KEY].orEmpty()
-            update(app, raw)
-        }
-    }
-
     fun keywords(context: Context): List<String> {
-        if (cached.isEmpty()) {
-            cached = defaultKeywords(context.applicationContext)
+        val raw = prefs(context.applicationContext).getString(PREF_KEYWORDS, "")?.trim().orEmpty()
+        if (cached.isEmpty() || raw != cachedRaw) {
+            update(context.applicationContext, raw)
         }
-        ensureLoaded(context)
         return cached
     }
 
     fun keywordsText(context: Context): String {
-        ensureLoaded(context)
-        return if (cachedRaw.isNotBlank()) cachedRaw else defaultKeywords(context.applicationContext).joinToString(", ")
+        val raw = prefs(context.applicationContext).getString(PREF_KEYWORDS, "")?.trim().orEmpty()
+        return if (raw.isNotBlank()) raw else defaultKeywords(context.applicationContext).joinToString(", ")
     }
 
     fun save(context: Context, raw: String) {
         val trimmed = raw.trim()
         val app = context.applicationContext
         update(app, trimmed)
-        MainService.scope.launch {
-            app.dataStore.edit { prefs -> prefs[KEYWORDS_KEY] = trimmed }
-        }
+        prefs(app).edit().putString(PREF_KEYWORDS, trimmed).apply()
     }
 
     fun reset(context: Context) {
         val app = context.applicationContext
         cachedRaw = ""
         cached = defaultKeywords(app)
-        MainService.scope.launch {
-            app.dataStore.edit { prefs -> prefs.remove(KEYWORDS_KEY) }
-        }
+        prefs(app).edit().remove(PREF_KEYWORDS).apply()
     }
 }
 
@@ -184,10 +157,6 @@ fun Context.processAndCopyCode(text: String) {
 }
 
 class MainService : Service() {
-    companion object {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    }
-
     override fun onBind(intent: Intent): IBinder = Messenger(Handler(Looper.getMainLooper())).binder
 }
 
@@ -218,8 +187,6 @@ class PluginActivity : Activity() {
         super.onCreate(savedInstanceState)
         val binding = ActivityPluginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        KeywordStore.ensureLoaded(this)
 
         binding.keywordInput.setText(KeywordStore.keywordsText(this))
         binding.saveKeywordsButton.setOnClickListener {

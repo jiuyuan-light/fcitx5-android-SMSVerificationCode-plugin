@@ -29,7 +29,7 @@ android {
                 .distinct()
                 .sorted()
         } else {
-            listOf("验证码", "校验码", "动态码", "确认码", "取件码", "提货码", "一次性", "口令")
+            listOf("一次性", "口令", "动态码", "取件码", "提货码", "校验码", "确认码", "验证码")
         }
         val keywordJoined = keywordLines.joinToString(", ")
         fun escapeRes(value: String) = value.replace("\\", "\\\\").replace("\"", "\\\"")
@@ -65,7 +65,5 @@ android {
 }
 
 dependencies {
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     testImplementation("junit:junit:4.13.2")
 }

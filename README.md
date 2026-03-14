@@ -21,7 +21,7 @@
 
 ## 默认关键字
 默认关键字来自 `default_keywords.txt`（支持 `#` 开头的注释行），如误操作可直接从下方复制恢复（逗号分隔）：
-验证码, 校验码, 动态码, 确认码, 取件码, 提货码, 一次性, 口令
+一次性, 口令, 动态码, 取件码, 提货码, 校验码, 确认码, 验证码
 
 ## 构建指南
 本项目使用 Gradle 构建。构建前请先设置 `JAVA_HOME` 与 `ANDROID_HOME`，或在 `local.properties` 中配置 `org.gradle.java.home` 与 `sdk.dir`（可参考 `local.properties.templete`）。
