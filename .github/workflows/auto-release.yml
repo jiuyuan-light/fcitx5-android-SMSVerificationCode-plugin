@@ -45,6 +45,14 @@ jobs:
             echo "release_exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Normalize version
+        id: version
+        run: |
+          TAG="${{ steps.upstream.outputs.latest_tag }}"
+          VERSION_NAME="${TAG#v}"
+          VERSION_NAME="${VERSION_NAME#V}"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
       - name: Stop if up to date
         if: steps.upstream.outputs.update_needed != 'true' && steps.release_check.outputs.release_exists == 'true'
         run: echo "Up to date."
@@ -83,7 +91,7 @@ jobs:
       - name: Build Release APK
         if: steps.upstream.outputs.update_needed == 'true' || steps.release_check.outputs.release_exists == 'false'
         env:
-          PLUGIN_VERSION: ${{ steps.upstream.outputs.latest_tag }}
+          PLUGIN_VERSION: ${{ steps.version.outputs.version_name }}
           SIGNING_STORE_FILE: signing.p12
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: fcitx5-android-sms-plugin
