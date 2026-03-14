@@ -1,4 +1,3 @@
-import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -6,40 +5,18 @@ plugins {
     id("org.jetbrains.kotlin.android") version "1.8.22"
 }
 
-object Versions {
-    val javaVersion = JavaVersion.VERSION_1_8
-    const val compileSdk = 35
-    const val minSdk = 24
-    const val targetSdk = 35
-    const val buildTools = "35.0.0"
-    const val baseVersionName = "0.1.2"
-}
-
 android {
-    namespace = "org.fcitx.fcitx5.android.plugin.sms"
-    compileSdk = Versions.compileSdk
-    buildToolsVersion = Versions.buildTools
-
-    fun loadLocalProperties(): Properties {
-        val props = Properties()
-        val f = rootProject.file("local.properties")
-        if (f.exists()) {
-            FileInputStream(f).use { props.load(it) }
-        }
-        return props
-    }
-
-    val appVersionName = System.getenv("PLUGIN_VERSION") ?: Versions.baseVersionName
-    val appVersionCode = 1012003
+    namespace = "org.fcitx.sms"
+    compileSdk = 35
+    buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "org.fcitx.fcitx5.android.plugin.sms"
-        minSdk = Versions.minSdk
-        targetSdk = Versions.targetSdk
-        versionCode = appVersionCode
-        versionName = appVersionName
-        
-        setProperty("archivesBaseName", "fcitx5-sms-plugin-$appVersionName")
+        applicationId = "org.fcitx.sms"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1012004
+        versionName = System.getenv("PLUGIN_VERSION") ?: "0.1.2"
+        setProperty("archivesBaseName", "fcitx5-sms-plugin-$versionName")
     }
 
     buildFeatures {
@@ -47,8 +24,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = Versions.javaVersion
-        targetCompatibility = Versions.javaVersion
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
@@ -57,24 +34,14 @@ android {
 
     signingConfigs {
         create("release") {
-            val localProps = loadLocalProperties()
-            val storeFilePath = System.getenv("SIGNING_STORE_FILE")
-                ?: localProps.getProperty("signing.storeFile")
-            storeFile = storeFilePath?.let { file(it) }
+            val props = Properties().apply {
+                rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+            }
+            storeFile = (System.getenv("SIGNING_STORE_FILE") ?: props.getProperty("signing.storeFile"))?.let { file(it) }
             storeType = "PKCS12"
-
-            val sp = System.getenv("SIGNING_STORE_PASSWORD")
-                ?: localProps.getProperty("signing.storePassword")
-                ?: error("Missing signing.storePassword")
-            storePassword = sp
-
-            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-                ?: localProps.getProperty("signing.keyAlias")
-                ?: "fcitx5-android-sms-plugin"
-
-            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
-                ?: localProps.getProperty("signing.keyPassword")
-                ?: sp
+            storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: props.getProperty("signing.storePassword") ?: ""
+            keyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: props.getProperty("signing.keyAlias") ?: "fcitx5-android-sms-plugin"
+            keyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: props.getProperty("signing.keyPassword") ?: storePassword
         }
     }
 
