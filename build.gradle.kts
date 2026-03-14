@@ -49,7 +49,7 @@ android {
         applicationId = "org.fcitx.fcitx5.android.plugin.sms"
         minSdk = Versions.minSdk
         targetSdk = Versions.targetSdk
-        versionCode = appVersionCode
+        versionCode = appVersionCode + 2
         versionName = appVersionName
         manifestPlaceholders["enableNotificationListener"] = "true"
         
@@ -106,7 +106,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             resValue("string", "app_name", "@string/app_name_release")
             buildConfigField("boolean", "ENABLE_NOTIFICATION_LISTENER", "true")
