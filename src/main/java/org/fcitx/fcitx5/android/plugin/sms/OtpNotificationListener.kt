@@ -8,11 +8,7 @@ class OtpNotificationListener : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         try {
-            super.onNotificationPosted(sbn)
-            
-            if (sbn == null) return
-            
-            val notification = sbn.notification
+            val notification = sbn?.notification ?: return
             val extras = notification.extras ?: return
             
             val title = extras.getString("android.title")
@@ -20,25 +16,11 @@ class OtpNotificationListener : NotificationListenerService() {
             val bigText = extras.getString("android.bigText")
             
             val content = "${title ?: ""} ${text ?: ""} ${bigText ?: ""}"
-            
-            if (content.isBlank()) return
-    
-            val code = VerificationCodeExtractor.extract(content)
-            if (code != null) {
-                copyToClipboard(code)
+            if (content.isNotBlank()) {
+                processAndCopyCode(content)
             }
         } catch (t: Throwable) {
             Log.e("Fcitx5SmsPlugin", "Error in onNotificationPosted", t)
         }
-    }
-
-    override fun onListenerConnected() {
-        super.onListenerConnected()
-        Log.i("Fcitx5SmsPlugin", "Notification Listener Connected")
-    }
-
-    override fun onListenerDisconnected() {
-        super.onListenerDisconnected()
-        Log.i("Fcitx5SmsPlugin", "Notification Listener Disconnected")
     }
 }

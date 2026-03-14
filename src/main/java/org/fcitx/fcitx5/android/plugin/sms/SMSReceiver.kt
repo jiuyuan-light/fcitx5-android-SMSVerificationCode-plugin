@@ -14,11 +14,7 @@ class SMSReceiver : BroadcastReceiver() {
                 
                 val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
                 messages?.forEach { sms ->
-                    val body = sms.messageBody
-                    val code = VerificationCodeExtractor.extract(body)
-                    if (code != null) {
-                        context.copyToClipboard(code)
-                    }
+                    context.processAndCopyCode(sms.messageBody)
                 }
             }
         } catch (t: Throwable) {
