@@ -38,13 +38,10 @@ android {
         setProperty("archivesBaseName", "fcitx5-sms-plugin-$versionName")
 
         val keywordFile = rootProject.file("default_keywords.txt")
-        val keywordLines = if (keywordFile.exists()) {
-            keywordFile.readLines(Charsets.UTF_8)
-                .map { it.trim() }
-                .filter { it.isNotEmpty() && !it.startsWith("#") }
-        } else {
-            listOf("一次性", "口令", "动态码", "取件码", "提货码", "校验码", "确认码", "验证码")
-        }
+        require(keywordFile.exists()) { "default_keywords.txt is required but missing." }
+        val keywordLines = keywordFile.readLines(Charsets.UTF_8)
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("#") }
         val keywordJoined = keywordLines.joinToString(", ")
         fun escapeRes(value: String) = value.replace("\\", "\\\\").replace("\"", "\\\"")
         resValue("string", "default_keywords", escapeRes(keywordJoined))
