@@ -2,6 +2,7 @@ package org.fcitx.sms
 
 import android.Manifest
 import android.app.Activity
+import android.app.Notification
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.ClipData
@@ -25,15 +26,34 @@ import android.widget.TextView
 import android.widget.Toast
 import java.util.regex.Pattern
 
-private val CODE_PATTERN = Pattern.compile("(?:验证码[:：\\s]*|code\\s*is\\s*|(?<![0-9]))([0-9]{4,8})(?![0-9])", Pattern.CASE_INSENSITIVE)
+private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
+private val KEYWORDS = arrayOf(
+    "验证码",
+    "校验码",
+    "动态码",
+    "确认码",
+    "取件码",
+    "提货码",
+    "一次性",
+    "口令",
+    "otp",
+    "passcode",
+    "one-time",
+    "verification",
+    "code"
+)
 
 fun Context.processAndCopyCode(text: String) {
-    if (!text.lowercase().let { it.contains("code") || it.contains("验证码") || it.contains("verification") }) return
-    CODE_PATTERN.matcher(text).takeIf { it.find() }?.group(1)?.let { code ->
-        try {
-            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("OTP", code))
-            Log.i("Fcitx5Sms", "Copied: $code")
-        } catch (e: Exception) { Log.e("Fcitx5Sms", "Copy failed") }
+    val normalized = text.lowercase()
+    if (KEYWORDS.none { normalized.contains(it) }) return
+    val matcher = DIGIT_PATTERN.matcher(text)
+    if (!matcher.find()) return
+    val code = matcher.group(1) ?: return
+    try {
+        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("OTP", code))
+        Log.i("Fcitx5Sms", "Copied: $code")
+    } catch (e: Exception) {
+        Log.e("Fcitx5Sms", "Copy failed", e)
     }
 }
 
@@ -43,7 +63,8 @@ class MainService : Service() {
 
 class SMSReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION == intent.action) {
+        val action = intent.action ?: return
+        if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION == action || Telephony.Sms.Intents.SMS_DELIVER_ACTION == action) {
             Telephony.Sms.Intents.getMessagesFromIntent(intent)?.forEach { context.processAndCopyCode(it.messageBody) }
         }
     }
@@ -51,9 +72,17 @@ class SMSReceiver : BroadcastReceiver() {
 
 class OtpNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        sbn?.notification?.extras?.let { e ->
-            val content = "${e.getString("android.title") ?: ""} ${e.getString("android.text") ?: ""} ${e.getString("android.bigText") ?: ""}"
-            if (content.isNotBlank()) processAndCopyCode(content)
+        try {
+            val extras = sbn?.notification?.extras ?: return
+            val parts = ArrayList<CharSequence>(5)
+            extras.getCharSequence(Notification.EXTRA_TITLE)?.let { parts.add(it) }
+            extras.getCharSequence(Notification.EXTRA_TEXT)?.let { parts.add(it) }
+            extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.let { parts.add(it) }
+            extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.let { parts.addAll(it) }
+            val content = parts.joinToString(" ") { it.toString() }.trim()
+            if (content.isNotEmpty()) processAndCopyCode(content)
+        } catch (t: Throwable) {
+            Log.e("Fcitx5Sms", "Notification parse failed", t)
         }
     }
 }

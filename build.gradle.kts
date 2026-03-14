@@ -14,7 +14,7 @@ android {
         applicationId = "org.fcitx.sms"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1012005
+        versionCode = 1012006
         versionName = System.getenv("PLUGIN_VERSION") ?: "0.1.2"
         setProperty("archivesBaseName", "fcitx5-sms-plugin-$versionName")
     }
