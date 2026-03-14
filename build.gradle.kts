@@ -29,29 +29,15 @@ android {
         return props
     }
 
-    fun normalizeVersionName(input: String): String {
-        val v = if (input.startsWith("v")) input.substring(1) else input
-        return if (Regex("^\\d+\\.\\d+\\.\\d+$").matches(v)) v else Versions.baseVersionName
-    }
-
-    fun versionCodeOf(versionName: String): Int {
-        val parts = versionName.split('.')
-        val major = parts.getOrNull(0)?.toIntOrNull() ?: 0
-        val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
-        val patch = parts.getOrNull(2)?.toIntOrNull() ?: 0
-        return major * 1_000_000 + minor * 1_000 + patch
-    }
-
-    val appVersionName = normalizeVersionName(System.getenv("PLUGIN_VERSION") ?: Versions.baseVersionName)
-    val appVersionCode = versionCodeOf(appVersionName)
+    val appVersionName = System.getenv("PLUGIN_VERSION") ?: Versions.baseVersionName
+    val appVersionCode = 1012003
 
     defaultConfig {
         applicationId = "org.fcitx.fcitx5.android.plugin.sms"
         minSdk = Versions.minSdk
         targetSdk = Versions.targetSdk
-        versionCode = appVersionCode + 2
+        versionCode = appVersionCode
         versionName = appVersionName
-        manifestPlaceholders["enableNotificationListener"] = "true"
         
         setProperty("archivesBaseName", "fcitx5-sms-plugin-$appVersionName")
     }
@@ -73,34 +59,24 @@ android {
     signingConfigs {
         create("release") {
             val localProps = loadLocalProperties()
-            val storeFilePath =
-                System.getenv("SIGNING_STORE_FILE")?.takeIf { it.isNotBlank() }
-                    ?: (project.findProperty("signing.storeFile") as? String)?.takeIf { it.isNotBlank() }
-                    ?: localProps.getProperty("signing.storeFile")?.takeIf { it.isNotBlank() }
-                    ?: "D:/code/worker/tmp/Fcitx5-Android-SMS-Plugin.p12"
+            val storeFilePath = System.getenv("SIGNING_STORE_FILE")
+                ?: localProps.getProperty("signing.storeFile")
+                ?: "D:/code/worker/tmp/Fcitx5-Android-SMS-Plugin.p12"
             storeFile = file(storeFilePath)
             storeType = "PKCS12"
 
-            val sp =
-                System.getenv("SIGNING_STORE_PASSWORD")?.takeIf { it.isNotBlank() }
-                    ?: (project.findProperty("signing.storePassword") as? String)?.takeIf { it.isNotBlank() }
-                    ?: localProps.getProperty("signing.storePassword")?.takeIf { it.isNotBlank() }
-                    ?: error("Missing signing.storePassword (set in local.properties or env SIGNING_STORE_PASSWORD)")
+            val sp = System.getenv("SIGNING_STORE_PASSWORD")
+                ?: localProps.getProperty("signing.storePassword")
+                ?: error("Missing signing.storePassword")
             storePassword = sp
 
-            val alias =
-                System.getenv("SIGNING_KEY_ALIAS")?.takeIf { it.isNotBlank() }
-                    ?: (project.findProperty("signing.keyAlias") as? String)?.takeIf { it.isNotBlank() }
-                    ?: localProps.getProperty("signing.keyAlias")?.takeIf { it.isNotBlank() }
-                    ?: "fcitx5-android-sms-plugin"
-            keyAlias = alias
+            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                ?: localProps.getProperty("signing.keyAlias")
+                ?: "fcitx5-android-sms-plugin"
 
-            val kp =
-                System.getenv("SIGNING_KEY_PASSWORD")?.takeIf { it.isNotBlank() }
-                    ?: (project.findProperty("signing.keyPassword") as? String)?.takeIf { it.isNotBlank() }
-                    ?: localProps.getProperty("signing.keyPassword")?.takeIf { it.isNotBlank() }
-                    ?: sp
-            keyPassword = kp
+            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+                ?: localProps.getProperty("signing.keyPassword")
+                ?: sp
         }
     }
 
@@ -115,7 +91,6 @@ android {
         debug {
             resValue("string", "app_name", "@string/app_name_debug")
             buildConfigField("boolean", "ENABLE_NOTIFICATION_LISTENER", "true")
-            manifestPlaceholders["enableNotificationListener"] = "true"
         }
     }
 }
