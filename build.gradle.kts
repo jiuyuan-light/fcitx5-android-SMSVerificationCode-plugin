@@ -17,10 +17,11 @@ android {
         applicationId = "org.fcitx.fcitx5.android.plugin.sms"
         minSdk = 24
         targetSdk = 35
-        val versionFile = rootProject.file("version.properties")
-        val versionProps = Properties().apply {
-            if (versionFile.exists()) {
-                versionFile.inputStream().use { load(it) }
+        val versionProps = Properties()
+        listOf("version.properties", "version.local.properties").forEach { name ->
+            val f = rootProject.file(name)
+            if (f.exists()) {
+                f.inputStream().use { versionProps.load(it) }
             }
         }
         val envVersionName = System.getenv("PLUGIN_VERSION")

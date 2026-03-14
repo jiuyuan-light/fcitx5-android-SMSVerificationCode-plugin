@@ -23,14 +23,13 @@ import android.widget.Toast
 import org.fcitx.fcitx5.android.plugin.sms.databinding.ActivityPluginBinding
 
 private const val REQUEST_SMS_PERMISSION = 100
-private const val CLIP_LABEL = "OTP"
 
 fun Context.processAndCopyCode(text: String) {
     val code = OtpParser.pickOtp(text, KeywordStore.keywords(this)) ?: return
     if (!OtpDeduper.shouldCopy(code)) return
     try {
         (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-            .setPrimaryClip(ClipData.newPlainText(CLIP_LABEL, code))
+            .setPrimaryClip(ClipData.newPlainText(getString(R.string.clip_label), code))
     } catch (e: Exception) {
         Log.e("Fcitx5Sms", "Copy failed", e)
     }

@@ -44,7 +44,7 @@ cd fcitx5-android-SMSVerificationCode-plugin
 ```
 
 说明：`src/main/assets/descriptor.json` 为占位文件，`sha256` 与 `files` 会在发布或打包时更新。`src/main/res/xml/plugin.xml` 仅包含插件元信息。
-版本号来自 `version.properties`，可用环境变量 `PLUGIN_VERSION`/`PLUGIN_VERSION_CODE` 覆盖。
+版本号来自 `version.properties`（可选 `version.local.properties` 覆盖），也可用环境变量 `PLUGIN_VERSION`/`PLUGIN_VERSION_CODE` 覆盖。
 
 ## 贡献与致谢
 - [fcitx5-android](https://github.com/fcitx5-android/fcitx5-android)

@@ -10,4 +10,5 @@
     <string name="keywords_saved">关键字已保存</string>
     <string name="permission_granted">权限已授予</string>
     <string name="permission_denied">权限被拒绝</string>
+    <string name="clip_label">验证码</string>
 </resources>

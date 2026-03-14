@@ -6,22 +6,6 @@ import java.util.regex.Pattern
 private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
 private val LENGTH_PREFERENCE = intArrayOf(6, 4, 5, 7, 8)
 
-internal object OtpDeduper {
-    private var lastCode: String? = null
-    private var lastAt: Long = 0
-    private const val WINDOW_MS = 60_000L
-
-    @Synchronized
-    fun shouldCopy(code: String): Boolean {
-        val now = SystemClock.elapsedRealtime()
-        val same = (code == lastCode) && (now - lastAt) < WINDOW_MS
-        if (same) return false
-        lastCode = code
-        lastAt = now
-        return true
-    }
-}
-
 internal object OtpParser {
     fun pickOtp(text: String, keywords: List<String>): String? {
         val matches = ArrayList<Pair<Int, String>>(2)
