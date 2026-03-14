@@ -16,23 +16,36 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Messenger
 import android.os.SystemClock
-import android.provider.Telephony
 import android.provider.Settings
+import android.provider.Telephony
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
-private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
 private const val PREFS_NAME = "otp"
 private const val PREF_KEYWORDS = "keywords"
 private const val REQUEST_SMS_PERMISSION = 100
 private const val CLIP_LABEL = "OTP"
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = PREFS_NAME)
+private val KEYWORDS_KEY = stringPreferencesKey(PREF_KEYWORDS)
+
+private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
 private val DEFAULT_KEYWORDS = listOf(
     "验证码",
     "校验码",
@@ -60,27 +73,53 @@ private object OtpDeduper {
     }
 }
 
-private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-
-private fun loadKeywords(context: Context): List<String> {
-    val raw = prefs(context).getString(PREF_KEYWORDS, null)?.trim().orEmpty()
-    if (raw.isEmpty()) return DEFAULT_KEYWORDS
-    val parsed = raw.split(Regex("[,;\\n]+"))
+internal fun parseKeywords(raw: String): List<String> {
+    return raw.split(Regex("[,;\\n]+"))
         .map { it.trim() }
         .filter { it.isNotEmpty() }
-    return if (parsed.isEmpty()) DEFAULT_KEYWORDS else parsed
+        .distinct()
 }
 
-private fun loadKeywordsText(context: Context): String {
-    val raw = prefs(context).getString(PREF_KEYWORDS, null)?.trim().orEmpty()
-    return if (raw.isEmpty()) DEFAULT_KEYWORDS.joinToString(", ") else raw
+private object KeywordStore {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val initialized = AtomicBoolean(false)
+    @Volatile private var cachedRaw: String = ""
+    @Volatile private var cached: List<String> = DEFAULT_KEYWORDS
+
+    private fun update(raw: String) {
+        val parsed = parseKeywords(raw)
+        cachedRaw = raw
+        cached = if (parsed.isEmpty()) DEFAULT_KEYWORDS else parsed
+    }
+
+    fun ensureLoaded(context: Context) {
+        if (!initialized.compareAndSet(false, true)) return
+        scope.launch {
+            val raw = context.dataStore.data.first()[KEYWORDS_KEY].orEmpty()
+            update(raw)
+        }
+    }
+
+    fun keywords(context: Context): List<String> {
+        ensureLoaded(context)
+        return cached
+    }
+
+    fun keywordsText(context: Context): String {
+        ensureLoaded(context)
+        return if (cachedRaw.isNotBlank()) cachedRaw else DEFAULT_KEYWORDS.joinToString(", ")
+    }
+
+    fun save(context: Context, raw: String) {
+        val trimmed = raw.trim()
+        update(trimmed)
+        scope.launch {
+            context.dataStore.edit { prefs -> prefs[KEYWORDS_KEY] = trimmed }
+        }
+    }
 }
 
-private fun saveKeywords(context: Context, raw: String) {
-    prefs(context).edit().putString(PREF_KEYWORDS, raw.trim()).apply()
-}
-
-private fun pickOtp(text: String, keywords: List<String>): String? {
+internal fun pickOtp(text: String, keywords: List<String>): String? {
     val matches = ArrayList<Pair<Int, String>>(2)
     val matcher = DIGIT_PATTERN.matcher(text)
     while (matcher.find()) {
@@ -106,7 +145,7 @@ private fun pickOtp(text: String, keywords: List<String>): String? {
 }
 
 fun Context.processAndCopyCode(text: String) {
-    val code = pickOtp(text, loadKeywords(this)) ?: return
+    val code = pickOtp(text, KeywordStore.keywords(this)) ?: return
     if (!OtpDeduper.shouldCopy(code)) return
     try {
         (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
@@ -152,42 +191,23 @@ class OtpNotificationListener : NotificationListenerService() {
 class PluginActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(64, 64, 64, 64)
+        setContentView(R.layout.activity_plugin)
+
+        KeywordStore.ensureLoaded(this)
+
+        val keywordInput = findViewById<EditText>(R.id.keyword_input)
+        keywordInput.setText(KeywordStore.keywordsText(this))
+
+        findViewById<Button>(R.id.save_keywords_button).setOnClickListener {
+            KeywordStore.save(this, keywordInput.text?.toString().orEmpty())
+            Toast.makeText(this, getString(R.string.keywords_saved), Toast.LENGTH_SHORT).show()
         }
-        root.addView(TextView(this).apply {
-            text = getString(R.string.app_name)
-            textSize = 20f
-            setPadding(0, 0, 0, 48)
-        })
-        root.addView(TextView(this).apply {
-            text = getString(R.string.keyword_label)
-            textSize = 14f
-            setPadding(0, 0, 0, 12)
-        })
-        val keywordInput = EditText(this).apply {
-            hint = getString(R.string.keyword_hint)
-            setText(loadKeywordsText(this@PluginActivity))
-            setPadding(0, 0, 0, 24)
+        findViewById<Button>(R.id.sms_permission_button).setOnClickListener {
+            requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), REQUEST_SMS_PERMISSION)
         }
-        root.addView(keywordInput)
-        root.addView(Button(this).apply {
-            text = getString(R.string.save_keywords)
-            setOnClickListener {
-                saveKeywords(this@PluginActivity, keywordInput.text?.toString().orEmpty())
-                Toast.makeText(this@PluginActivity, getString(R.string.keywords_saved), Toast.LENGTH_SHORT).show()
-            }
-        })
-        root.addView(Button(this).apply {
-            text = getString(R.string.grant_sms_permission)
-            setOnClickListener { requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), REQUEST_SMS_PERMISSION) }
-        })
-        root.addView(Button(this).apply {
-            text = getString(R.string.grant_notification_permission)
-            setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
-        })
-        setContentView(root)
+        findViewById<Button>(R.id.notification_permission_button).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

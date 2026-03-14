@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp"
+        android:text="@string/app_name"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/keyword_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:text="@string/keyword_label"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/keyword_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/keyword_hint"
+        android:inputType="text"
+        android:paddingBottom="16dp" />
+
+    <Button
+        android:id="@+id/save_keywords_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:text="@string/save_keywords" />
+
+    <Button
+        android:id="@+id/sms_permission_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:text="@string/grant_sms_permission" />
+
+    <Button
+        android:id="@+id/notification_permission_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/grant_notification_permission" />
+
+</LinearLayout>
