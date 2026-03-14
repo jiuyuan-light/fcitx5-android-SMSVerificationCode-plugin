@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
 
     <application
-        android:label="短信验证码插件"
+        android:label="@string/app_name"
         android:theme="@android:style/Theme.DeviceDefault.Light">
         
         <meta-data
@@ -12,7 +14,7 @@
             android:resource="@xml/plugin" />
 
         <activity
-            android:name=".PluginActivity"
+            android:name="org.fcitx.fcitx5.android.plugin.sms.PluginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="org.fcitx.fcitx5.android.plugin.MANIFEST" />
@@ -21,7 +23,7 @@
         </activity>
 
         <service
-            android:name=".MainService"
+            android:name="org.fcitx.fcitx5.android.plugin.sms.MainService"
             android:exported="true"
             android:permission="org.fcitx.fcitx5.android.permission.PLUGIN">
             <intent-filter>
@@ -30,7 +32,7 @@
         </service>
 
         <receiver
-            android:name=".SMSReceiver"
+            android:name="org.fcitx.fcitx5.android.plugin.sms.SMSReceiver"
             android:exported="true"
             android:permission="android.permission.BROADCAST_SMS">
             <intent-filter android:priority="1000">
@@ -40,7 +42,7 @@
         </receiver>
 
         <service
-            android:name=".OtpNotificationListener"
+            android:name="org.fcitx.fcitx5.android.plugin.sms.OtpNotificationListener"
             android:exported="true"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>

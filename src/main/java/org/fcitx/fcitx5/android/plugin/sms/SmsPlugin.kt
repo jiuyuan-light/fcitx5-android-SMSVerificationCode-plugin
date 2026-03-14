@@ -1,4 +1,4 @@
-package org.fcitx.sms
+package org.fcitx.fcitx5.android.plugin.sms
 
 import android.Manifest
 import android.app.Activity
@@ -27,28 +27,31 @@ import android.widget.Toast
 import java.util.regex.Pattern
 
 private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
-private val KEYWORDS = arrayOf(
-    "验证码",
-    "校验码",
-    "动态码",
-    "确认码",
-    "取件码",
-    "提货码",
-    "一次性",
-    "口令",
-    "otp",
-    "passcode",
-    "one-time",
-    "verification",
-    "code"
-)
+private val KEYWORDS = arrayOf("验证码", "校验码", "动态码", "确认码", "取件码", "提货码", "一次性", "口令", "otp", "passcode", "one-time", "verification", "code")
+
+private fun pickOtp(text: String): String? {
+    val matches = ArrayList<Pair<Int, String>>(2)
+    val matcher = DIGIT_PATTERN.matcher(text)
+    while (matcher.find()) {
+        val code = matcher.group(1) ?: continue
+        matches.add(matcher.start(1) to code)
+        if (matches.size >= 8) break
+    }
+    if (matches.isEmpty()) return null
+    if (matches.size == 1) return matches[0].second
+
+    val lower = text.lowercase()
+    val keywordPos = KEYWORDS.map { lower.indexOf(it) }.filter { it >= 0 }
+    if (keywordPos.isNotEmpty()) {
+        val minKeywordPos = keywordPos.minOrNull() ?: -1
+        return matches.minByOrNull { (pos, _) -> kotlin.math.abs(pos - minKeywordPos) }?.second
+    }
+
+    return matches.firstOrNull { (_, code) -> code.length == 6 }?.second ?: matches[0].second
+}
 
 fun Context.processAndCopyCode(text: String) {
-    val normalized = text.lowercase()
-    if (KEYWORDS.none { normalized.contains(it) }) return
-    val matcher = DIGIT_PATTERN.matcher(text)
-    if (!matcher.find()) return
-    val code = matcher.group(1) ?: return
+    val code = pickOtp(text) ?: return
     try {
         (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("OTP", code))
         Log.i("Fcitx5Sms", "Copied: $code")

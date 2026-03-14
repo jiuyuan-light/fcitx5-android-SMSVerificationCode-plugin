@@ -6,17 +6,21 @@ plugins {
 }
 
 android {
-    namespace = "org.fcitx.sms"
+    namespace = "org.fcitx.fcitx5.android.plugin.sms"
     compileSdk = 35
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "org.fcitx.sms"
+        applicationId = "org.fcitx.fcitx5.android.plugin.sms"
         minSdk = 24
         targetSdk = 35
         versionCode = 1012006
         versionName = System.getenv("PLUGIN_VERSION") ?: "0.1.2"
         setProperty("archivesBaseName", "fcitx5-sms-plugin-$versionName")
+    }
+
+    buildFeatures {
+        resValues = true
     }
 
     compileOptions {
@@ -42,7 +46,41 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            resValue("string", "app_name", "@string/app_name_release")
             signingConfig = signingConfigs.getByName("release")
         }
+        debug {
+            resValue("string", "app_name", "@string/app_name_debug")
+        }
     }
+}
+
+val verifyFcitxPluginMetadata = tasks.register("verifyFcitxPluginMetadata") {
+    doLast {
+        if (project.findProperty("skipPluginMetadataCheck") != null) return@doLast
+
+        fun requireOk(ok: Boolean, message: String) {
+            if (!ok) throw GradleException(message)
+        }
+
+        val pluginXml = file("src/main/res/xml/plugin.xml").readText()
+        requireOk(pluginXml.contains("<domain>fcitx5-sms</domain>"), "plugin.xml must keep domain=fcitx5-sms")
+
+        val descriptorJson = file("src/main/assets/descriptor.json").readText()
+        requireOk(Regex("\"sha256\"\\s*:\\s*\"0{64}\"").containsMatchIn(descriptorJson), "descriptor.json sha256 must be 64 zeros")
+        requireOk(Regex("\"files\"\\s*:\\s*\\{\\s*\\}").containsMatchIn(descriptorJson), "descriptor.json files must be empty object")
+
+        val stringsXmlFile = file("src/main/res/values/strings.xml")
+        requireOk(stringsXmlFile.exists(), "strings.xml must exist")
+        val stringsXml = stringsXmlFile.readText()
+        requireOk(stringsXml.contains("name=\"app_name\""), "strings.xml must define app_name")
+
+        val manifest = file("src/main/AndroidManifest.xml").readText()
+        requireOk(manifest.contains("android:label=\"@string/app_name\""), "AndroidManifest.xml must use @string/app_name label")
+        requireOk(manifest.contains("android.permission.READ_SMS"), "AndroidManifest.xml must request READ_SMS")
+    }
+}
+
+tasks.matching { it.name == "preBuild" || it.name == "preReleaseBuild" || it.name == "preDebugBuild" }.configureEach {
+    dependsOn(verifyFcitxPluginMetadata)
 }
