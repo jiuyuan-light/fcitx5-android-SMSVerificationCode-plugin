@@ -19,6 +19,10 @@
 
 提示：如需从通知提取验证码，请在系统设置中开启通知监听权限。关键字可在插件界面配置并保存。
 
+## 默认关键字
+默认关键字来自 `default_keywords.txt`，如误操作可直接从下方复制恢复（逗号分隔）：
+验证码, 校验码, 动态码, 确认码, 取件码, 提货码, 一次性, 口令
+
 ## 构建指南
 本项目使用 Gradle 构建。构建前请先设置 `JAVA_HOME` 与 `ANDROID_HOME`，或在 `local.properties` 中配置 `org.gradle.java.home` 与 `sdk.dir`（可参考 `local.properties.templete`）。
 

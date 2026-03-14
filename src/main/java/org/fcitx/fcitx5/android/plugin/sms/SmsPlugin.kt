@@ -45,16 +45,6 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 private val KEYWORDS_KEY = stringPreferencesKey(PREF_KEYWORDS)
 
 private val DIGIT_PATTERN = Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
-private val DEFAULT_KEYWORDS = listOf(
-    "验证码",
-    "校验码",
-    "动态码",
-    "确认码",
-    "取件码",
-    "提货码",
-    "一次性",
-    "口令"
-)
 private val LENGTH_PREFERENCE = intArrayOf(6, 4, 5, 7, 8)
 
 private object OtpDeduper {
@@ -83,37 +73,46 @@ internal fun parseKeywords(raw: String): List<String> {
 private object KeywordStore {
     private val initialized = AtomicBoolean(false)
     @Volatile private var cachedRaw: String = ""
-    @Volatile private var cached: List<String> = DEFAULT_KEYWORDS
+    @Volatile private var cached: List<String> = emptyList()
 
-    private fun update(raw: String) {
+    private fun defaultKeywords(context: Context): List<String> {
+        return parseKeywords(context.getString(R.string.default_keywords))
+    }
+
+    private fun update(context: Context, raw: String) {
         val parsed = parseKeywords(raw)
         cachedRaw = raw
-        cached = if (parsed.isEmpty()) DEFAULT_KEYWORDS else parsed
+        cached = if (parsed.isEmpty()) defaultKeywords(context) else parsed
     }
 
     fun ensureLoaded(context: Context) {
         if (!initialized.compareAndSet(false, true)) return
         MainService.scope.launch {
-            val raw = context.applicationContext.dataStore.data.first()[KEYWORDS_KEY].orEmpty()
-            update(raw)
+            val app = context.applicationContext
+            val raw = app.dataStore.data.first()[KEYWORDS_KEY].orEmpty()
+            update(app, raw)
         }
     }
 
     fun keywords(context: Context): List<String> {
+        if (cached.isEmpty()) {
+            cached = defaultKeywords(context.applicationContext)
+        }
         ensureLoaded(context)
         return cached
     }
 
     fun keywordsText(context: Context): String {
         ensureLoaded(context)
-        return if (cachedRaw.isNotBlank()) cachedRaw else DEFAULT_KEYWORDS.joinToString(", ")
+        return if (cachedRaw.isNotBlank()) cachedRaw else defaultKeywords(context.applicationContext).joinToString(", ")
     }
 
     fun save(context: Context, raw: String) {
         val trimmed = raw.trim()
-        update(trimmed)
+        val app = context.applicationContext
+        update(app, trimmed)
         MainService.scope.launch {
-            context.applicationContext.dataStore.edit { prefs -> prefs[KEYWORDS_KEY] = trimmed }
+            app.dataStore.edit { prefs -> prefs[KEYWORDS_KEY] = trimmed }
         }
     }
 }

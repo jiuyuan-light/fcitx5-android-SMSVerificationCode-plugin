@@ -20,6 +20,18 @@ android {
         versionCode = 1012007
         versionName = System.getenv("PLUGIN_VERSION") ?: "0.1.2"
         setProperty("archivesBaseName", "fcitx5-sms-plugin-$versionName")
+
+        val keywordFile = rootProject.file("default_keywords.txt")
+        val keywordLines = if (keywordFile.exists()) {
+            keywordFile.readLines(Charsets.UTF_8)
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !it.startsWith("#") }
+        } else {
+            listOf("验证码", "校验码", "动态码", "确认码", "取件码", "提货码", "一次性", "口令")
+        }
+        val keywordJoined = keywordLines.joinToString(", ")
+        fun escapeRes(value: String) = value.replace("\\", "\\\\").replace("\"", "\\\"")
+        resValue("string", "default_keywords", escapeRes(keywordJoined))
     }
 
     compileOptions {
