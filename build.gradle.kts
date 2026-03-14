@@ -1,7 +1,7 @@
 import java.util.Properties
 
 plugins {
-    id("com.android.application")
+    id("com.android.application") version "8.7.0"
     id("org.jetbrains.kotlin.android") version "1.8.22"
 }
 
@@ -14,13 +14,9 @@ android {
         applicationId = "org.fcitx.sms"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1012004
+        versionCode = 1012005
         versionName = System.getenv("PLUGIN_VERSION") ?: "0.1.2"
         setProperty("archivesBaseName", "fcitx5-sms-plugin-$versionName")
-    }
-
-    buildFeatures {
-        resValues = true
     }
 
     compileOptions {
@@ -28,15 +24,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+    kotlinOptions { jvmTarget = "1.8" }
 
     signingConfigs {
         create("release") {
-            val props = Properties().apply {
-                rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
-            }
+            val props = Properties()
+            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
+            
             storeFile = (System.getenv("SIGNING_STORE_FILE") ?: props.getProperty("signing.storeFile"))?.let { file(it) }
             storeType = "PKCS12"
             storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: props.getProperty("signing.storePassword") ?: ""
@@ -48,12 +42,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
     }
-}
-
-dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.22")
 }

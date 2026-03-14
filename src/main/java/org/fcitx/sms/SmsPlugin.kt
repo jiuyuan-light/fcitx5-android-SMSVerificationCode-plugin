@@ -25,28 +25,15 @@ import android.widget.TextView
 import android.widget.Toast
 import java.util.regex.Pattern
 
-private val PATTERNS = listOf(
-    Pattern.compile("验证码[:：\\s]*([0-9]{4,8})"),
-    Pattern.compile("code\\s*is\\s*([0-9]{4,8})", Pattern.CASE_INSENSITIVE),
-    Pattern.compile("(?<![0-9])([0-9]{4,8})(?![0-9])")
-)
+private val CODE_PATTERN = Pattern.compile("(?:验证码[:：\\s]*|code\\s*is\\s*|(?<![0-9]))([0-9]{4,8})(?![0-9])", Pattern.CASE_INSENSITIVE)
 
 fun Context.processAndCopyCode(text: String) {
-    val lowerText = text.lowercase()
-    if (!lowerText.contains("code") && !lowerText.contains("验证码") && !lowerText.contains("verification")) return
-    for (pattern in PATTERNS) {
-        val matcher = pattern.matcher(text)
-        if (matcher.find()) {
-            val code = matcher.group(1) ?: continue
-            try {
-                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText("Verification Code", code))
-                Log.i("Fcitx5SmsPlugin", "Copied: $code")
-            } catch (e: Exception) {
-                Log.e("Fcitx5SmsPlugin", "Copy failed", e)
-            }
-            return
-        }
+    if (!text.lowercase().let { it.contains("code") || it.contains("验证码") || it.contains("verification") }) return
+    CODE_PATTERN.matcher(text).takeIf { it.find() }?.group(1)?.let { code ->
+        try {
+            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("OTP", code))
+            Log.i("Fcitx5Sms", "Copied: $code")
+        } catch (e: Exception) { Log.e("Fcitx5Sms", "Copy failed") }
     }
 }
 
@@ -57,45 +44,32 @@ class MainService : Service() {
 class SMSReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION == intent.action) {
-            Telephony.Sms.Intents.getMessagesFromIntent(intent)?.forEach { 
-                context.processAndCopyCode(it.messageBody) 
-            }
+            Telephony.Sms.Intents.getMessagesFromIntent(intent)?.forEach { context.processAndCopyCode(it.messageBody) }
         }
     }
 }
 
 class OtpNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        val extras = sbn?.notification?.extras ?: return
-        val content = "${extras.getString("android.title") ?: ""} ${extras.getString("android.text") ?: ""} ${extras.getString("android.bigText") ?: ""}"
-        if (content.isNotBlank()) processAndCopyCode(content)
+        sbn?.notification?.extras?.let { e ->
+            val content = "${e.getString("android.title") ?: ""} ${e.getString("android.text") ?: ""} ${e.getString("android.bigText") ?: ""}"
+            if (content.isNotBlank()) processAndCopyCode(content)
+        }
     }
 }
 
 class PluginActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(64, 64, 64, 64)
-        }
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(64, 64, 64, 64) }
         root.addView(TextView(this).apply { text = "短信验证码插件"; textSize = 24f; setPadding(0, 0, 0, 32) })
         root.addView(TextView(this).apply { text = "自动提取短信验证码并复制到剪贴板"; textSize = 16f; setPadding(0, 0, 0, 64) })
-        root.addView(Button(this).apply {
-            text = "授予短信权限"
-            setOnClickListener { requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), 100) }
-        })
-        root.addView(Button(this).apply {
-            text = "授予通知监听权限"
-            setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
-        })
+        root.addView(Button(this).apply { text = "授予短信权限"; setOnClickListener { requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), 100) } })
+        root.addView(Button(this).apply { text = "授予通知监听权限"; setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } })
         setContentView(root)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == 100) {
-            val ok = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            Toast.makeText(this, if (ok) "权限已授予" else "权限被拒绝", Toast.LENGTH_SHORT).show()
-        }
+        if (requestCode == 100) Toast.makeText(this, if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) "权限已授予" else "权限被拒绝", Toast.LENGTH_SHORT).show()
     }
 }
