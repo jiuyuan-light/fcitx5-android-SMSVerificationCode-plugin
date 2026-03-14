@@ -1,0 +1,13 @@
+## Copy to local.properties and fill in your local paths/secrets.
+
+# Android SDK path (Windows example)
+# sdk.dir=C\:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk
+
+# Java home path (Windows example)
+# org.gradle.java.home=C\:\\Program Files\\Android\\Android Studio\\jbr
+
+# Signing config (PKCS12)
+# signing.storeFile=D\:/path/to/keystore.p12
+# signing.storePassword=CHANGE_ME
+# signing.keyAlias=CHANGE_ME
+# signing.keyPassword=CHANGE_ME

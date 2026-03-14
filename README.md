@@ -25,6 +25,7 @@
 ## 🛠️ 构建指南
 
 本项目使用 Gradle 构建。
+构建前请先设置 `JAVA_HOME` 和 `ANDROID_HOME`，或在 `local.properties` 中配置 `org.gradle.java.home` 与 `sdk.dir`（可参考 `local.properties.templete`）。
 
 ### 环境要求
 - JDK 11+

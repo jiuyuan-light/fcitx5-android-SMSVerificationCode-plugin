@@ -118,6 +118,19 @@ CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
 
 # Determine the Java command to use to start the JVM.
+# If JAVA_HOME is not set, try reading org.gradle.java.home from local.properties.
+if [ -z "$JAVA_HOME" ] && [ -f "$APP_HOME/local.properties" ] ; then
+    java_home_prop=$(
+        grep -E '^org.gradle.java.home=' "$APP_HOME/local.properties" 2>/dev/null | tail -n 1 | sed 's/^[^=]*=//'
+    )
+    if [ -n "$java_home_prop" ] ; then
+        # Unescape Java properties: \\ -> \ , \: -> :
+        java_home_prop=$(printf '%s' "$java_home_prop" | sed 's/\\\\/\\/g; s/\\:/:/g')
+        JAVA_HOME=$java_home_prop
+        export JAVA_HOME
+    fi
+fi
+
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
         # IBM's JDK on AIX uses strange locations for the executables
