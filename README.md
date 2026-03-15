@@ -46,6 +46,9 @@ cd fcitx5-android-SMSVerificationCode-plugin
 说明：`src/main/assets/descriptor.json` 为占位文件，`sha256` 与 `files` 会在发布或打包时更新。`src/main/res/xml/plugin.xml` 仅包含插件元信息。
 版本号来自 `version.properties`（可选 `version.local.properties` 覆盖），也可用环境变量 `PLUGIN_VERSION`/`PLUGIN_VERSION_CODE` 覆盖。
 
+## 重构约束
+- `AndroidManifest.xml` 必须同时保留 `SMS_RECEIVED` 与 `SMS_DELIVER` 的广播监听，否则可能导致“收到短信但不复制验证码”的回归。
+
 ## 贡献与致谢
 - [fcitx5-android](https://github.com/fcitx5-android/fcitx5-android)
 - [SmsForwarder](https://github.com/pppscn/SmsForwarder)

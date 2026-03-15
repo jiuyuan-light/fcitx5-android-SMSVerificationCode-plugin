@@ -24,4 +24,11 @@ class OtpParserTest {
         val code = pickOtp(text, emptyList())
         assertEquals("333333", code)
     }
+
+    @Test
+    fun pickOtp_handlesTypicalSmsBody() {
+        val text = "您的验证码是 246810，请勿泄露。"
+        val code = pickOtp(text, listOf("验证码"))
+        assertEquals("246810", code)
+    }
 }
