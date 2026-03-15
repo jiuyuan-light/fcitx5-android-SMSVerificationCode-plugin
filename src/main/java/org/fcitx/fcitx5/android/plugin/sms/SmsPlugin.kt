@@ -42,8 +42,15 @@ class MainService : Service() {
 class SMSReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
-        if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION == action) {
-            MessageExtractors.extractSmsBodies(intent).forEach { context.processAndCopyCode(it) }
+        if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION == action ||
+            Telephony.Sms.Intents.SMS_DELIVER_ACTION == action
+        ) {
+            val bodies = MessageExtractors.extractSmsBodies(intent)
+            if (bodies.isEmpty()) {
+                Log.w("Fcitx5Sms", "No SMS bodies extracted for action=$action")
+                return
+            }
+            bodies.forEach { context.processAndCopyCode(it) }
         }
     }
 }
